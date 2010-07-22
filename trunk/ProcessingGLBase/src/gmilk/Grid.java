@@ -2,8 +2,8 @@ package gmilk;
 
 public class Grid {
 	final private int gridSizeY, gridSizeX;
-	final private float[] nodesDx;
-	final private float[] nodesDy;
+	final float[] nodesDx;
+	final float[] nodesDy;
 
 	/**
 	 * The Grid-Type
@@ -48,11 +48,18 @@ public class Grid {
 	}
 	
 	public float getWarpX(int x, int y){
-		return getX(x, y) + getDx(x, y) - 0.003f;
+		return getX(x, y) + getDx(x, y);
 	}
 	
 	public float getWarpY(int x, int y){
 		return getY(x, y) + getDy(x, y);
+	}
+
+	public void setWarpX(int x, int y, float warpX, float warpY) {
+		int i = getIndex(x, y);
+		nodesDx[i] = warpX;
+		nodesDy[i] = warpY;
+		
 	}
 	
 
