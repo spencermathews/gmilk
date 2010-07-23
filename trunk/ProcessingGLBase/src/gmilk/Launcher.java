@@ -28,6 +28,10 @@ public class Launcher extends PApplet {
 
 	int oldMouseX, oldMouseY, mouseDx, mouseDy;
 
+	public static void main(String args[]) {
+		PApplet.main(new String[] { "--present", "gmilk.Launcher" });
+	}
+
 	public void setup() {
 		size(sizeX, sizeY, GLGraphics.GLGRAPHICS);
 		frameRate(60);
