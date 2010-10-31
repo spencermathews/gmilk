@@ -1,0 +1,6 @@
+<filter name="copy">
+    <description>Copy</description>
+    <fragment>copy.glsl</fragment>
+	<textures input="1" output="1"></textures>
+</filter>
+
