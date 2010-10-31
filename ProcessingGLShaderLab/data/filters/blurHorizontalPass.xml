@@ -1,0 +1,7 @@
+<filter name="hBlur">
+    <description>First out of two steps for a gaussian blur.</description>
+    <fragment>blurHorizontalPass.glsl</fragment>
+	<textures input="1" output="1"></textures>
+	<parameter type="vec2" name="pixelSize" label="uv dimensions of one pixel">0.002 0.002</parameter>
+</filter>
+

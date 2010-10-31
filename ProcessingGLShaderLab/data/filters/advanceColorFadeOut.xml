@@ -1,0 +1,8 @@
+<filter name="advanceColorFadeOut">
+    <description>Advances the color fade-out</description>
+    <fragment>advanceColorFadeOut.glsl</fragment>
+	<textures input="1" output="1"></textures>
+	<parameter type="float" name="factor" label="percentage of the old values">0.9</parameter>
+	<parameter type="float" name="increment" label="static increment to the result">-0.004</parameter>
+</filter>
+
