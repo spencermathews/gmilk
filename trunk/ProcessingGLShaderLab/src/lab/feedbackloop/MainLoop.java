@@ -40,6 +40,7 @@ public class MainLoop extends PApplet {
 	private int oldMouseX;
 	private int oldMouseY;
 	private GLGraphicsOffScreen offScreenGraphics;
+	private boolean hasSizeBeenSet = false;
 
 	// UI
 	// TODO: presetNameLabel
@@ -62,7 +63,7 @@ public class MainLoop extends PApplet {
 	// launch configuration
 	int canvasWidth = 1024;
 	int canvasHeight = 1024;
-	float desiredFPS = 50;
+	float desiredFPS = 60;
 	boolean captureVideo = false;
 
 	public void setup() {
@@ -72,12 +73,11 @@ public class MainLoop extends PApplet {
 			canvasHeight = 480; // 16:9 video 480p
 		}
 
-		size(canvasWidth, canvasHeight, GLConstants.GLGRAPHICS);
+		if (!hasSizeBeenSet) {
+			hasSizeBeenSet = true;
+			size(canvasWidth, canvasHeight, GLConstants.GLGRAPHICS);
+		}
 		frameRate(desiredFPS);
-
-		smooth();
-		noStroke();
-
 		halted = false;
 
 		font = createFont("Lucida Console", 16); // XXX: use loadFont() for an external .vlw font.
@@ -94,9 +94,8 @@ public class MainLoop extends PApplet {
 
 		offScreenGraphics = new GLGraphicsOffScreen(this, canvasWidth, canvasHeight);
 
-		// airplaneTexture.filter(copyFilter, mainTexture1); // initialize with a background image
-		static_noise_hq.filter(copyFilter, mainTexture1); // initialize with a background image
-		// mainTexture1.filter(copyFilter, helperTexture);
+		airplaneTexture.filter(copyFilter, mainTexture1); // initialize with a background image
+		// static_noise_hq.filter(copyFilter, mainTexture1); // initialize with a noise image
 	}
 
 	private void initializeUIElements() {
@@ -232,7 +231,6 @@ public class MainLoop extends PApplet {
 	private void drawIntoFeedbackLoop(GLTexture feedbackLoopTexture) {
 		offScreenGraphics.beginDraw();
 		offScreenGraphics.clear(0, 0); // initialize with full transparent
-		offScreenGraphics.smooth();
 		// TODO: draw in waveforms and shapes here
 		offScreenGraphics.noStroke();
 		offScreenGraphics.fill(255, 255);
