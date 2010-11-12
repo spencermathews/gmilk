@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import processing.core.PApplet;
+import processing.core.PConstants;
 import processing.core.PFont;
 import codeanticode.glgraphics.GLConstants;
 import codeanticode.glgraphics.GLGraphics;
@@ -37,6 +38,8 @@ public class MainLoop extends PApplet {
 	// helping variables
 	private String filterPath;
 	private String texturePath;
+	private int mouseDx;
+	private int mouseDy;
 	private int oldMouseX;
 	private int oldMouseY;
 	private GLGraphicsOffScreen offScreenGraphics;
@@ -45,8 +48,8 @@ public class MainLoop extends PApplet {
 	// UI
 	// TODO: presetNameLabel
 	private boolean showPresetNameLabel;
-	// TODO: fpsLabel
-	private boolean showFPSLabel;
+	private FPSLabel fpsLabel;
+	private boolean showFPSLabel = true;
 	// TODO: hintOverlay
 	private boolean showHint;
 	// TODO: helpOverlay
@@ -99,7 +102,7 @@ public class MainLoop extends PApplet {
 	}
 
 	private void initializeUIElements() {
-		// TODO
+		fpsLabel = new FPSLabel(this);
 	}
 
 	final private void initializeGLTextureFilters() {
@@ -154,6 +157,7 @@ public class MainLoop extends PApplet {
 	}
 
 	public void draw() {
+		handleMouseMotion();
 		GLTexture previousFrame, newFrame;
 		if (bufferFlip) {
 			previousFrame = mainTexture0;
@@ -176,6 +180,13 @@ public class MainLoop extends PApplet {
 
 		drawOverlays(previousFrame);
 		bufferFlip = !bufferFlip;
+	}
+
+	private void handleMouseMotion() {
+		mouseDx = oldMouseX - mouseX;
+		mouseDy = oldMouseY - mouseY;
+		oldMouseX = mouseX;
+		oldMouseY = mouseY;
 	}
 
 	private void advanceFeedbackLoop(GLTexture previousFrame, GLTexture newFrame) {
@@ -223,9 +234,10 @@ public class MainLoop extends PApplet {
 	}
 
 	private void drawOverlays(GLTexture compositeTexture) {
-		// draw UI here
-		// TODO
-		text("FPS: " + floor(frameRate), 50, 50);
+		if(showFPSLabel){
+			fpsLabel.SetFps((new Float(floor(frameRate*10.0f)*0.1)).toString());
+			fpsLabel.draw();
+		}
 	}
 
 	private void drawIntoFeedbackLoop(GLTexture feedbackLoopTexture) {
@@ -238,6 +250,12 @@ public class MainLoop extends PApplet {
 		offScreenGraphics.ellipse(mouseX, mouseY, 40, 40);
 		offScreenGraphics.endDraw();
 		feedbackLoopTexture.copy(offScreenGraphics.getTexture()); // copy overlay texture into feedback loop
+	}
+	
+	public void keyReleased(){
+		if( key == 'f' || key == 'F' ){
+			showFPSLabel = !showFPSLabel;
+		}
 	}
 
 	public static void main(String args[]) {
