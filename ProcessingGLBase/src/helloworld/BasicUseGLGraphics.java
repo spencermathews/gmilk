@@ -31,7 +31,7 @@ public class BasicUseGLGraphics extends PApplet {
 	    println(tex0.width + " " + tex0.height);
 	    
 	    // A filter is defined in an xml file where the glsl shaders and grid are specified.
-	    pulseEmboss = new GLTextureFilter(this, sketchPath("data/pulsatingEmboss.xml"));
+	    pulseEmboss = new GLTextureFilter(this, sketchPath("data/pulsatingEmboss-Compiled.xml"));
 	    
 	    img = new PImage(tex0.width, tex0.height);
 	    
