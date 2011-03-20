@@ -115,7 +115,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 	protected void onNonUnicodeInput() {
 		boolean shiftPressed = nonUnicodesPressed.contains(KeyEvent.VK_SHIFT);
 		boolean ctrlPressed = nonUnicodesPressed.contains(KeyEvent.VK_CONTROL);
-		 
+
 		if (nonUnicodesPressed.contains(KeyEvent.VK_CONTROL) && nonUnicodesPressed.contains(KeyEvent.VK_ENTER)) {
 			saveAndClose();
 			return;
@@ -140,10 +140,10 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			_delete();
 		}
 		if (nonUnicodesPressed.contains(KeyEvent.VK_LEFT)) {
-			_left(shiftPressed);
+			_left(shiftPressed, ctrlPressed);
 		}
 		if (nonUnicodesPressed.contains(KeyEvent.VK_RIGHT)) {
-			_right(shiftPressed);
+			_right(shiftPressed, ctrlPressed);
 		}
 		if (nonUnicodesPressed.contains(KeyEvent.VK_UP)) {
 			_up(shiftPressed);
@@ -165,7 +165,8 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 	}
 
 	private void _down(boolean shiftPressed) {
-		if(lineIndex == lines.size()-1){
+		if (lineIndex == lines.size() - 1) {
+			selection &= shiftPressed;
 			return;
 		}
 		boolean newSelection = false;
@@ -198,7 +199,8 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 	}
 
 	private void _up(boolean shiftPressed) {
-		if(lineIndex == 0){
+		if (lineIndex == 0) {
+			selection &= shiftPressed;
 			return;
 		}
 		boolean newSelection = false;
@@ -232,6 +234,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 
 	private void _end(boolean shiftPressed) {
 		if (lineIndex == lines.size() - 1 && charIndex == lines.get(lineIndex).length()) {
+			selection &= shiftPressed;
 			return;
 		}
 		boolean newSelection = false;
@@ -250,8 +253,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			selectionEndLineIndex = lineIndex;
 			selectionEndCharIndex = charIndex;
 		} else {
-			if (!shiftPressed
-					|| (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex && charIndex != lines.get(lineIndex).length())) {
+			if (!shiftPressed || (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex)) {
 				selection = false;
 			}
 			if (selection) {
@@ -265,46 +267,47 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 
 	}
 
-	private void _right(boolean shiftPressed) {
-		if (lineIndex == lines.size() - 1 && charIndex == lines.get(lineIndex).length()) {
-			return;
-		}
-		boolean newSelection = false;
-		if (shiftPressed && !selection) {
-			selection = true;
-			newSelection = true;
-			selectionBeginLineIndex = lineIndex;
-			selectionBeginCharIndex = charIndex;
-		}
-		boolean moveBegin = (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex);
-
-		if (charIndex < lines.get(lineIndex).length()) {
-			charIndex++;
-		} else if (lineIndex < lines.size() - 1) {
-			charIndex = 0;
-			lineIndex++;
-		}
-
-		if (newSelection) {
-			selectionEndLineIndex = lineIndex;
-			selectionEndCharIndex = charIndex;
-		} else {
-			if (!shiftPressed
-					|| (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex)) {
-				selection = false;
+	private void _right(boolean shiftPressed, boolean ctrlPressed) {
+		do {
+			if (lineIndex == lines.size() - 1 && charIndex == lines.get(lineIndex).length()) {
+				selection &= shiftPressed;
+				return;
 			}
-			if (selection) {
-				if (moveBegin) {
-					select(lineIndex, charIndex, selectionEndLineIndex, selectionEndCharIndex);
-				} else {
-					select(selectionBeginLineIndex, selectionBeginCharIndex, lineIndex, charIndex);
+			boolean newSelection = false;
+			if (shiftPressed && !selection) {
+				selection = true;
+				newSelection = true;
+				selectionBeginLineIndex = lineIndex;
+				selectionBeginCharIndex = charIndex;
+			}
+			boolean moveBegin = (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex);
+			if (charIndex < lines.get(lineIndex).length()) {
+				charIndex++;
+			} else if (lineIndex < lines.size() - 1) {
+				charIndex = 0;
+				lineIndex++;
+			}
+			if (newSelection) {
+				selectionEndLineIndex = lineIndex;
+				selectionEndCharIndex = charIndex;
+			} else {
+				if (!shiftPressed || (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex)) {
+					selection = false;
+				}
+				if (selection) {
+					if (moveBegin) {
+						select(lineIndex, charIndex, selectionEndLineIndex, selectionEndCharIndex);
+					} else {
+						select(selectionBeginLineIndex, selectionBeginCharIndex, lineIndex, charIndex);
+					}
 				}
 			}
-		}
+		} while (ctrlPressed && !cursorAtWordEnd());
 	}
 
 	private void _home(boolean shiftPressed) {
 		if (lineIndex == 0 && charIndex == 0) {
+			selection &= shiftPressed;
 			return;
 		}
 		boolean newSelection = false;
@@ -340,42 +343,63 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 		}
 	}
 
-	private void _left(boolean shiftPressed) {
-		if (lineIndex == 0 && charIndex == 0) {
-			return;
-		}
-		boolean newSelection = false;
-		if (shiftPressed && !selection) {
-			selection = true;
-			newSelection = true;
-			selectionEndLineIndex = lineIndex;
-			selectionEndCharIndex = charIndex;
-		}
-		boolean moveBegin = (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex);
-
-		if (charIndex > 0) {
-			charIndex--;
-		} else if (lineIndex > 0) {
-			lineIndex--;
-			charIndex = lines.get(lineIndex).length();
-		}
-
-		if (newSelection) {
-			selectionBeginLineIndex = lineIndex;
-			selectionBeginCharIndex = charIndex;
-		} else {
-			if (!shiftPressed
-					|| (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex)) {
-				selection = false;
+	private void _left(boolean shiftPressed, boolean ctrlPressed) {
+		do {
+			if (lineIndex == 0 && charIndex == 0) {
+				selection &= shiftPressed;
+				return;
 			}
-			if (selection) {
-				if (moveBegin) {
-					select(lineIndex, charIndex, selectionEndLineIndex, selectionEndCharIndex);
-				} else {
-					select(selectionBeginLineIndex, selectionBeginCharIndex, lineIndex, charIndex);
+			boolean newSelection = false;
+			if (shiftPressed && !selection) {
+				selection = true;
+				newSelection = true;
+				selectionEndLineIndex = lineIndex;
+				selectionEndCharIndex = charIndex;
+			}
+			boolean moveBegin = true;
+			moveBegin = (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex);
+			if (charIndex > 0) {
+				charIndex--;
+			} else if (lineIndex > 0) {
+				lineIndex--;
+				charIndex = lines.get(lineIndex).length();
+			}
+			if (newSelection) {
+				selectionBeginLineIndex = lineIndex;
+				selectionBeginCharIndex = charIndex;
+			} else {
+				if (!shiftPressed || (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex)) {
+					selection = false;
+				}
+				if (selection) {
+					if (moveBegin) {
+						select(lineIndex, charIndex, selectionEndLineIndex, selectionEndCharIndex);
+					} else {
+						select(selectionBeginLineIndex, selectionBeginCharIndex, lineIndex, charIndex);
+					}
 				}
 			}
+		} while (ctrlPressed && !cursorAtWordEnd());
+	}
+
+	private boolean cursorAtWordEnd() {
+		if ((charIndex == 0) || (charIndex >= lines.get(lineIndex).length())) {
+			return true;
 		}
+		if ((charIndex + 1 < lines.get(lineIndex).length())) {
+			char before = lines.get(lineIndex).charAt(charIndex - 1);
+			char it = lines.get(lineIndex).charAt(charIndex);
+			char after = lines.get(lineIndex).charAt(charIndex + 1);
+			if ((it == '(' && (before != '(' || before == ' ')) || (it == ')' && (before != ')' || before == ' '))
+					|| (before == ' ' || before == '(' || before == ')' || before == ']' || before == '.' || before == ';') && it != ' ' && it != '('
+					&& it != ')' && it != ']' && it != ';') {
+				return true;
+			}
+			if (it >= 'A' && it <= 'Z' && (!(before >= 'A' && before <= 'Z') || !(after >= 'A' && after <= 'Z'))) {
+				return true; // at capital(y))).x
+			}
+		}
+		return false;
 	}
 
 	private void select(int lineBegin, int charBegin, int lineEnd, int charEnd) {
