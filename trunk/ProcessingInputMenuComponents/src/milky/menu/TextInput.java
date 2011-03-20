@@ -165,6 +165,9 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 	}
 
 	private void _down(boolean shiftPressed) {
+		if(lineIndex == lines.size()-1){
+			return;
+		}
 		boolean newSelection = false;
 		if (shiftPressed && !selection) {
 			selection = true;
@@ -181,7 +184,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			selectionEndLineIndex = lineIndex;
 			selectionEndCharIndex = charIndex;
 		} else {
-			if (!shiftPressed || (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex && lineIndex != lines.size() - 1)) {
+			if (!shiftPressed || (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex)) {
 				selection = false;
 			}
 			if (selection) {
@@ -195,6 +198,9 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 	}
 
 	private void _up(boolean shiftPressed) {
+		if(lineIndex == 0){
+			return;
+		}
 		boolean newSelection = false;
 		if (shiftPressed && !selection) {
 			selection = true;
@@ -211,7 +217,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			selectionBeginLineIndex = lineIndex;
 			selectionBeginCharIndex = charIndex;
 		} else {
-			if (!shiftPressed || (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex && lineIndex != 0)) {
+			if (!shiftPressed || (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex)) {
 				selection = false;
 			}
 			if (selection) {
@@ -284,7 +290,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			selectionEndCharIndex = charIndex;
 		} else {
 			if (!shiftPressed
-					|| (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex && charIndex != lines.get(lineIndex).length())) {
+					|| (lineIndex == selectionEndLineIndex && charIndex == selectionEndCharIndex)) {
 				selection = false;
 			}
 			if (selection) {
@@ -359,7 +365,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			selectionBeginCharIndex = charIndex;
 		} else {
 			if (!shiftPressed
-					|| (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex && charIndex != lines.get(lineIndex).length())) {
+					|| (lineIndex == selectionBeginLineIndex && charIndex == selectionBeginCharIndex)) {
 				selection = false;
 			}
 			if (selection) {
