@@ -390,13 +390,14 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			char before = lines.get(lineIndex).charAt(charIndex - 1);
 			char it = lines.get(lineIndex).charAt(charIndex);
 			char after = lines.get(lineIndex).charAt(charIndex + 1);
+			// XXX: tired and confused if it's all correct ^^
 			if ((it == '(' && (before != '(' || before == ' ')) || (it == ')' && (before != ')' || before == ' '))
 					|| (before == ' ' || before == '(' || before == ')' || before == ']' || before == '.' || before == ';') && it != ' ' && it != '('
 					&& it != ')' && it != ']' && it != ';') {
 				return true;
 			}
 			if (it >= 'A' && it <= 'Z' && (!(before >= 'A' && before <= 'Z') || !(after >= 'A' && after <= 'Z'))) {
-				return true; // at capital(y))).x
+				return true;
 			}
 		}
 		return false;
