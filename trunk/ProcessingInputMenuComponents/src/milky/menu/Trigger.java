@@ -52,4 +52,12 @@ public class Trigger extends MilkyMenuInteractiveComponent implements ITriggerLi
 	protected void onUnicodeInput(char unicode) {
 	}
 
+	@Override
+	protected void copy() {
+	}
+
+	@Override
+	protected void paste() {
+	}
+
 }

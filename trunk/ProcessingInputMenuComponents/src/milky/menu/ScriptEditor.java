@@ -124,4 +124,16 @@ public class ScriptEditor extends TextInput {
 	public Bindings getBindings() {
 		return bindings;
 	}
+	
+	@Override
+	protected void copy() {
+		System.out.println("script editor copy");
+		super.copy();
+	}
+	
+	@Override
+	protected void paste() {
+		System.out.println("script editor paste");
+		super.paste();
+	}
 }

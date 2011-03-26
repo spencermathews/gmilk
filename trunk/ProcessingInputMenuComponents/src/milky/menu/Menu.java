@@ -93,7 +93,7 @@ public class Menu extends MilkyMenuInteractiveComponent {
 
 	@Override
 	protected void onUnicodeInput(char unicode) {
-		// TODO Auto-generated method stub
+		// XXX: maybe define a short-command map for the menu items
 
 	}
 
@@ -112,6 +112,14 @@ public class Menu extends MilkyMenuInteractiveComponent {
 			labels.add(item.prefix + item.label + item.suffix);
 		}
 		return labels.toArray(new String[] {});
+	}
+
+	@Override
+	protected void copy() {
+	}
+
+	@Override
+	protected void paste() {
 	}
 
 }

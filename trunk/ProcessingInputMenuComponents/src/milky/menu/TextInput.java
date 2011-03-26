@@ -1,19 +1,22 @@
 package milky.menu;
 
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import processing.core.PApplet;
-
-import com.dnsalias.java.timer.NativeTimer;
-import com.dnsalias.java.timer.nanotimer.NanoTimer;
 
 /**
  * A Multiline Text editor component for Processing.
  * 
  * @author Felix Woitzel, Feb 2011
  */
-public class TextInput extends MilkyMenuInteractiveComponent {
+public class TextInput extends MilkyMenuInteractiveComponent implements ClipboardOwner {
 
 	private static final String LINEBREAK = "\n";
 
@@ -101,8 +104,7 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 	}
 
 	private boolean _cursorBlink() {
-		NativeTimer time = new NanoTimer();
-		return (time.getClockTicks() * 2 % time.getResolution()) > time.getResolution() / 2;
+		return (System.currentTimeMillis() % 500) > 500 / 2;
 	}
 
 	@Override
@@ -412,6 +414,81 @@ public class TextInput extends MilkyMenuInteractiveComponent {
 			selectionEndLineIndex = lineEnd;
 			selectionEndCharIndex = charEnd;
 		}
+	}
+
+	@Override
+	public void lostOwnership(Clipboard clipboard, Transferable transferable) {
+		// XXX: ???
+	}
+
+	@Override
+	protected void copy() {
+		if (selection) {
+			String copyString = "";
+			if (selectionBeginLineIndex + 1 < selectionEndLineIndex) {
+				copyString = lines.get(selectionBeginLineIndex).substring(selectionBeginCharIndex) + LINEBREAK;
+				for (int lIndex = selectionBeginLineIndex + 1; lIndex < selectionEndLineIndex; lIndex++) {
+					copyString += lines.get(lIndex) + LINEBREAK;
+				}
+				copyString += lines.get(selectionEndLineIndex).substring(0, selectionEndCharIndex);
+			} else if (selectionBeginLineIndex + 1 == selectionEndLineIndex) {
+				copyString = lines.get(selectionBeginLineIndex).substring(selectionBeginCharIndex) + LINEBREAK;
+				copyString += lines.get(selectionEndLineIndex).substring(0, selectionEndCharIndex);
+			} else if (selectionBeginLineIndex == selectionEndLineIndex) {
+				copyString = lines.get(selectionBeginLineIndex).substring(selectionBeginCharIndex, selectionEndCharIndex);
+			}
+			StringSelection copySelection = new StringSelection(copyString);
+			clipboard.setContents(copySelection, this);
+		}
+	}
+
+	@Override
+	protected void paste() {
+		clearSelection();
+		String pasteString = "";
+		Transferable clipboardContent = clipboard.getContents(this);
+		if ((clipboardContent != null) && (clipboardContent.isDataFlavorSupported(DataFlavor.stringFlavor))) {
+			try {
+				pasteString = (String) clipboardContent.getTransferData(DataFlavor.stringFlavor);
+			} catch (Exception e) {
+				onError(e);
+			}
+		}
+		LinkedList<String> copyLines = new LinkedList<String>();
+		while (pasteString.indexOf(LINEBREAK) > -1) {
+			String copyLine = pasteString.substring(0, pasteString.indexOf(LINEBREAK));
+			copyLines.add(copyLine);
+			pasteString = pasteString.substring(pasteString.indexOf(LINEBREAK) + 1);
+		}
+		copyLines.add(pasteString);
+		int numLines = copyLines.size();
+		String head = lines.get(lineIndex).substring(0, charIndex);
+		String tail = lines.get(lineIndex).substring(charIndex);
+		if (numLines >= 2) {
+			lines.set(lineIndex, head + copyLines.get(0));
+			lines.add(lineIndex + 1, copyLines.get(numLines - 1) + tail);
+			for (int l = numLines - 2; l > 0; l--) {
+				lines.add(lineIndex + 1, copyLines.get(l));
+			}
+			lineIndex += numLines - 1;
+			charIndex = copyLines.get(numLines - 1).length();
+		} else if (numLines == 1) {
+			lines.set(lineIndex, head + copyLines.get(0) + tail);
+			charIndex = head.length() + copyLines.get(0).length();
+		}
+
+	}
+
+	private static final TextInput error = new TextInput("error");
+
+	protected void onError(Exception e) {
+		ArrayList<String> lines = new ArrayList<String>();
+		lines.add("unexpected error: " + label);
+		lines.add("text: " + e.toString());
+		lines.add("message: " + e.getMessage());
+		error.setText(lines);
+		error.parent = this;
+		error.setActive(true);
 	}
 
 	private void _escape() {

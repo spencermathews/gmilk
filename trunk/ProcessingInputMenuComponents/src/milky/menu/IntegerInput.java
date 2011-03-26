@@ -98,4 +98,12 @@ public class IntegerInput extends MilkyMenuInteractiveComponent {
 		}
 	}
 
+	@Override
+	protected void copy() {
+	}
+
+	@Override
+	protected void paste() {
+	}
+
 }
