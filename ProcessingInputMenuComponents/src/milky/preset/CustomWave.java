@@ -1,4 +1,4 @@
-package milky.preseteditor;
+package milky.preset;
 
 import java.util.ArrayList;
 
