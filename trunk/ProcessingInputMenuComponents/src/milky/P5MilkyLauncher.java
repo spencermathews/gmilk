@@ -3,7 +3,7 @@ package milky;
 import java.awt.event.KeyEvent;
 
 import milky.menu.MilkyMenuInteractiveComponent;
-import milky.preseteditor.MilkyPresetEditor;
+import milky.preset.MilkyPresetEditor;
 import processing.core.PApplet;
 import processing.core.PFont;
 

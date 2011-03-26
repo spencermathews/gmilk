@@ -1,4 +1,4 @@
-package milky.preseteditor;
+package milky.preset;
 
 import java.awt.event.KeyEvent;
 import java.util.LinkedList;
