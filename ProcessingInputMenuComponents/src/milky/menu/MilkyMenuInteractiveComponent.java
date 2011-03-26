@@ -1,10 +1,14 @@
 package milky.menu;
 
+import java.awt.datatransfer.Clipboard;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+
+import javax.swing.KeyStroke;
 
 import milky.MenuSettings;
 
@@ -21,10 +25,13 @@ public abstract class MilkyMenuInteractiveComponent implements KeyListener {
 
 	public static MenuSettings settings = new MenuSettings();
 	private static KeyListener p5defaultKeyListener; // override the window close on 'Esc'
+	public static Clipboard clipboard;
 
 	public static void init(PApplet context) {
 		p5defaultKeyListener = context.getKeyListeners()[0];
 		context.removeKeyListener(p5defaultKeyListener);
+		clipboard = context.getToolkit().getSystemClipboard();
+
 	}
 
 	protected String prefix = "";
@@ -96,6 +103,21 @@ public abstract class MilkyMenuInteractiveComponent implements KeyListener {
 
 	@Override
 	public void keyPressed(KeyEvent keyEvent) {
+		KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(keyEvent);
+		if (keyStroke == KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK)
+				|| keyStroke == KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, ActionEvent.CTRL_MASK)) {
+			if (activeComponent != null) {
+				activeComponent.copy();
+			}
+			return;
+		}
+		if (keyStroke == KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK)
+				|| keyStroke == KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, ActionEvent.SHIFT_MASK)) {
+			if (activeComponent != null) {
+				activeComponent.paste();
+			}
+			return;
+		}
 		char keyChar = keyEvent.getKeyChar();
 		if (!validUnicode(keyChar)) {
 			preprocessNonUnicode(keyEvent);
@@ -111,6 +133,10 @@ public abstract class MilkyMenuInteractiveComponent implements KeyListener {
 		}
 	}
 
+	abstract protected void paste();
+
+	abstract protected void copy();
+
 	@Override
 	public void keyReleased(KeyEvent keyEvent) {
 		nonUnicodesPressed.remove(keyEvent.getKeyCode());
@@ -119,6 +145,7 @@ public abstract class MilkyMenuInteractiveComponent implements KeyListener {
 
 	@Override
 	public void keyTyped(KeyEvent keyEvent) {
+		// System.out.println("keyEvent: " + keyEvent);
 		char keyChar = keyEvent.getKeyChar();
 		if (validUnicode(keyChar) && activeComponent != null) {
 			activeComponent.onUnicodeInput(keyChar);
@@ -174,10 +201,6 @@ public abstract class MilkyMenuInteractiveComponent implements KeyListener {
 	}
 
 	protected static final HashSet<Integer> nonUnicodesPressed = new HashSet<Integer>();
-
-	protected HashSet<Integer> getPressedNonUnicodeKeys() {
-		return nonUnicodesPressed;
-	}
 
 	protected abstract void onUnicodeInput(char unicode);
 

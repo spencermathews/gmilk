@@ -62,4 +62,12 @@ public class Toggle extends MilkyMenuInteractiveComponent {
 		updateListeners();
 		setActive(false); // a toggle component must not be active
 	}
+
+	@Override
+	protected void copy() {
+	}
+
+	@Override
+	protected void paste() {
+	}
 }
