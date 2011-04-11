@@ -1,13 +1,17 @@
 package milky.menu;
 
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.LinkedList;
+
+import milky.menu.events.ITextChangeListener;
+import milky.menu.events.ITriggerListener;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.jdom.Element;
 
 import processing.core.PApplet;
 
@@ -16,11 +20,15 @@ import processing.core.PApplet;
  * 
  * @author Felix Woitzel, Feb 2011
  */
-public class TextInput extends MilkyMenuInteractiveComponent implements ClipboardOwner {
+public class TextInput extends InteractiveMenuComponent {
 
 	private static final String LINEBREAK = "\n";
 
 	protected ArrayList<String> lines = new ArrayList<String>();
+
+	protected boolean readOnly = false;
+
+	protected boolean multiLine = true;
 
 	int lineIndex = 0;
 	int charIndex = 0;
@@ -31,25 +39,104 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 	private int selectionEndCharIndex = -1;
 
 	private boolean selection = false;
+	private LinkedList<ITextChangeListener> textChangeListeners = new LinkedList<ITextChangeListener>();
+	private LinkedList<ITriggerListener> saveListeners = new LinkedList<ITriggerListener>();
+
+	protected String savedText;
 
 	public TextInput(String label) {
 		register(this);
 		this.prefix = "[";
-		this.label = label;
+		this.setLabel(label);
 		this.suffix = "]";
 		lines.add("");
 	}
 
+	@Override
+	public void setXML(Element textElem) {
+		setMultiLine(Boolean.parseBoolean(textElem.getAttributeValue("multiLine")));
+		setReadOnly(Boolean.parseBoolean(textElem.getAttributeValue("readOnly")));
+		setLabel(StringEscapeUtils.unescapeXml(textElem.getAttributeValue("label")));
+		savedText = textElem.getText();
+		setText(StringEscapeUtils.unescapeXml(savedText));
+		checkCursorPosition();
+	}
+
+	@Override
+	public Element getXML() {
+		Element xml = new Element("text");
+		xml.setAttribute("label", StringEscapeUtils.escapeXml(getLabel()));
+		xml.setAttribute("readOnly", "" + readOnly);
+		xml.setAttribute("multiLine", "" + multiLine);
+		xml.setText(StringEscapeUtils.escapeXml(getTextAsString()));
+		return xml;
+	}
+
+	public void setReadOnly(boolean readOnly) {
+		this.readOnly = readOnly;
+	}
+
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+
+	public void setMultiLine(boolean multiLine) {
+		this.multiLine = multiLine;
+	}
+
+	public boolean isMultiLine() {
+		return multiLine;
+	}
+
+	public void addTextChangeListener(ITextChangeListener listener) {
+		textChangeListeners.add(listener);
+	}
+
+	public void removeTextChangeListener(ITextChangeListener listener) {
+		textChangeListeners.remove(listener);
+	}
+
+	public LinkedList<ITextChangeListener> getTextChangeListeners() {
+		return textChangeListeners;
+	}
+
+	public void addSaveListener(ITriggerListener listener) {
+		saveListeners.add(listener);
+	}
+
+	public void removeSaveListener(ITriggerListener listener) {
+		saveListeners.remove(listener);
+	}
+
+	public void setText(String text) {
+		lines.clear();
+		while (text.indexOf(LINEBREAK) > -1) {
+			String line = text.substring(0, text.indexOf(LINEBREAK));
+			lines.add(line);
+			text = text.substring(text.indexOf(LINEBREAK) + 1);
+		}
+		lines.add(text);
+		savedText = getTextAsString();
+	}
+
 	public void setText(ArrayList<String> text) {
 		lines = text;
+		savedText = getTextAsString();
+	}
+
+	public void moveCursorToEndOfText() {
+		lineIndex = lines.size() - 1;
+		charIndex = lines.get(lineIndex).length();
 	}
 
 	public String getTextAsString() {
 		String string = "";
 		for (String line : lines) {
-			string += line + LINEBREAK;
+			string += line;
+			if (lines.indexOf(line) < lines.size() - 1) {
+				string += LINEBREAK;
+			}
 		}
-
 		return string;
 	}
 
@@ -64,12 +151,13 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 
 	@Override
 	protected void draw(PApplet context, int x, int y) {
-		drawBackground(context, x, y, (getMaxLineLength() + 3) * settings.fontWidth + 2 * settings.margin, lines.size() * settings.fontHeight + 2
+		int numLines = multiLine ? lines.size() : 1;
+		drawBackground(context, x, y, (getMaxLineLength() + 3) * settings.fontWidth + 2 * settings.margin, numLines * settings.fontHeight + 2
 				* settings.margin);
 		int lineH = 0;
 		for (String l : lines) {
 			String line = new String(l);
-			if (lineH == lineIndex) {
+			if (lineH == lineIndex && multiLine) {
 				context.fill(settings.highlightColor);
 			} else {
 				context.fill(settings.fontColor);
@@ -88,7 +176,7 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 					selectionIncrement += 1;
 					line = head + "]" + tail;
 				}
-			} else if (lineH == lineIndex && charIndex - 1 < lines.get(lineH).length()) {
+			} else if (lineH == lineIndex && charIndex - 1 < lines.get(lineH).length() && !readOnly) {
 				line += " ";
 				String head = line.substring(0, charIndex);
 				String tail = line.substring(charIndex + 1);
@@ -100,17 +188,22 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 			}
 			context.text(line, x + settings.fontWidth * 3 + settings.margin, y + (1 + lineH) * settings.fontHeight);
 			lineH++;
+			if (!multiLine) {
+				return;
+			}
 		}
 	}
 
-	private boolean _cursorBlink() {
-		return (System.currentTimeMillis() % 500) > 500 / 2;
+	private static final boolean _cursorBlink() {
+		return (System.currentTimeMillis() % 500) > 250;
 	}
 
 	@Override
 	protected void onUnicodeInput(char unicode) {
 		clearSelection();
-		_addChar(unicode);
+		if (!readOnly) {
+			_addChar(unicode);
+		}
 	}
 
 	@Override
@@ -122,6 +215,9 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 			saveAndClose();
 			return;
 		}
+		if (nonUnicodesPressed.contains(KeyEvent.VK_ENTER)) {
+			_return();
+		}
 		if (nonUnicodesPressed.contains(KeyEvent.VK_ESCAPE)) {
 			_escape();
 			return;
@@ -131,9 +227,6 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 		}
 		if (nonUnicodesPressed.contains(KeyEvent.VK_HOME)) {
 			_home(shiftPressed);
-		}
-		if (nonUnicodesPressed.contains(KeyEvent.VK_ENTER)) {
-			_return();
 		}
 		if (nonUnicodesPressed.contains(KeyEvent.VK_BACK_SPACE)) {
 			_backSpace();
@@ -157,13 +250,41 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 	}
 
 	protected void saveAndClose() {
+		checkTextChange();
+		savedText = getTextAsString();
 		close();
+	}
+
+	private void checkTextChange() {
+		if (!getTextAsString().equals(savedText)) {
+			for (ITextChangeListener listener : textChangeListeners) {
+				listener.onTextChanged();
+			}
+		} else {
+			updateSaveListeners();
+		}
+	}
+
+	private void updateSaveListeners() {
+		for (ITriggerListener listener : saveListeners) {
+			listener.onTrigger();
+		}
 	}
 
 	@Override
 	public void close() {
 		super.close();
 		selection = false;
+	}
+
+	protected void checkCursorPosition() {
+		if (lineIndex >= lines.size()) {
+			lineIndex = lines.size() - 1;
+			charIndex = lines.get(lineIndex).length();
+		}
+		if (charIndex > lines.get(lineIndex).length()) {
+			charIndex = lines.get(lineIndex).length();
+		}
 	}
 
 	private void _down(boolean shiftPressed) {
@@ -417,11 +538,6 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 	}
 
 	@Override
-	public void lostOwnership(Clipboard clipboard, Transferable transferable) {
-		// XXX: ???
-	}
-
-	@Override
 	protected void copy() {
 		if (selection) {
 			String copyString = "";
@@ -444,6 +560,9 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 
 	@Override
 	protected void paste() {
+		if (readOnly) {
+			return;
+		}
 		clearSelection();
 		String pasteString = "";
 		Transferable clipboardContent = clipboard.getContents(this);
@@ -464,7 +583,7 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 		int numLines = copyLines.size();
 		String head = lines.get(lineIndex).substring(0, charIndex);
 		String tail = lines.get(lineIndex).substring(charIndex);
-		if (numLines >= 2) {
+		if (numLines >= 2 && !multiLine) {
 			lines.set(lineIndex, head + copyLines.get(0));
 			lines.add(lineIndex + 1, copyLines.get(numLines - 1) + tail);
 			for (int l = numLines - 2; l > 0; l--) {
@@ -472,31 +591,21 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 			}
 			lineIndex += numLines - 1;
 			charIndex = copyLines.get(numLines - 1).length();
-		} else if (numLines == 1) {
+		} else if (numLines > 0) {
 			lines.set(lineIndex, head + copyLines.get(0) + tail);
 			charIndex = head.length() + copyLines.get(0).length();
 		}
-
-	}
-
-	private static final TextInput error = new TextInput("error");
-
-	protected void onError(Exception e) {
-		ArrayList<String> lines = new ArrayList<String>();
-		lines.add("unexpected error: " + label);
-		lines.add("text: " + e.toString());
-		lines.add("message: " + e.getMessage());
-		error.setText(lines);
-		error.parent = this;
-		error.setActive(true);
 	}
 
 	private void _escape() {
-		// TODO: discard text changes
+		setText(savedText); // reset text
 		close();
 	}
 
 	private void _return() {
+		if (!multiLine) {
+			saveAndClose();
+		}
 		if (selection) {
 			clearSelection();
 		}
@@ -510,7 +619,7 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 		lineIndex++;
 	}
 
-	private void clearSelection() {
+	protected void clearSelection() {
 		if (selection) {
 			if (selectionBeginLineIndex < selectionEndLineIndex) {
 				String head = lines.get(selectionBeginLineIndex).substring(0, selectionBeginCharIndex);
@@ -534,6 +643,9 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 	}
 
 	private void _backSpace() {
+		if (readOnly) {
+			return;
+		}
 		if (selection) {
 			clearSelection();
 		} else {
@@ -557,6 +669,9 @@ public class TextInput extends MilkyMenuInteractiveComponent implements Clipboar
 	}
 
 	private void _delete() {
+		if (readOnly) {
+			return;
+		}
 		if (selection) {
 			clearSelection();
 		} else {

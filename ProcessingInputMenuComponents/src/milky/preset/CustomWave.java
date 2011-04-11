@@ -1,14 +1,18 @@
 package milky.preset;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.script.Bindings;
 
+import org.apache.commons.lang.StringEscapeUtils;
+import org.jdom.Element;
+
 import milky.menu.IntegerInput;
+import milky.menu.InteractiveMenuComponent;
 import milky.menu.Menu;
-import milky.menu.ScriptEditor;
+import milky.menu.JavascriptEditor;
 import milky.menu.Toggle;
-import milky.menu.events.IIntegerInputListener;
 import processing.core.PApplet;
 
 public class CustomWave extends Menu {
@@ -25,8 +29,8 @@ public class CustomWave extends Menu {
 	IntegerInput blue = new IntegerInput("blue  ", 0, 255);
 	IntegerInput alpha = new IntegerInput("alpha ", 0, 255);
 
-	ScriptEditor initScript = new ScriptEditor("initialization script");
-	ScriptEditor perSampleScript = new ScriptEditor("per-sample script");
+	JavascriptEditor initScript = new JavascriptEditor("initialization script");
+	JavascriptEditor perSampleScript = new JavascriptEditor("per-sample script");
 
 	int[] rSamples = new int[MAX_SAMPLES];
 	int[] gSamples = new int[MAX_SAMPLES];
@@ -62,26 +66,39 @@ public class CustomWave extends Menu {
 
 		numberOfSamples.setValue(128);
 		
-//		numberOfSamples.addListener(new IIntegerInputListener() {
-//			public void onInput(int value) {
-//				if (inputBindings != null) {
-//					step(inputBindings);
-//				}
-//			}
-//		});
-
 		compile();
+		close();
 	}
+
+	@Override
+	public Element getXML() {
+		Element xml = new Element(PresetConstants.CUSTOM_WAVE);
+		xml.setAttribute("label", StringEscapeUtils.escapeXml(getLabel()));
+		for (InteractiveMenuComponent menuItem : menuItems) {
+			xml.addContent(menuItem.getXML());
+		}
+		return xml;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void setXML(Element node) {
+		List<Element> children = node.getChildren();
+		setLabel(node.getAttributeValue("label"));
+		menuItems.clear();
+		for (Element child : children) {
+			InteractiveMenuComponent childComponent = buildComponent(child);
+			addMenuItem(childComponent);
+		}
+	}
+
 
 	public void compile() {
 		initScript.compile();
 		perSampleScript.compile();
 	}
 
-	private Bindings inputBindings;
-
 	public void step(Bindings bindings) {
-		inputBindings = bindings;
 		int samples = numberOfSamples.getValue();
 
 		bindings.put("r", red.getValue());
@@ -91,6 +108,7 @@ public class CustomWave extends Menu {
 		bindings.put("x", 0.5f);
 		bindings.put("y", 0.5f);
 		bindings.put("samples", samples);
+		
 		initScript.execute(bindings);
 
 		for (int sample = 0; sample < samples; sample++) {
@@ -99,8 +117,6 @@ public class CustomWave extends Menu {
 			perSampleScript.execute(sampleBindings);
 			pushSample(sample);
 		}
-		// printSampleData(0);
-		// printSampleData(numberOfSamples.getValue() - 1);
 	}
 
 	private void pushSample(int sample) {
@@ -151,6 +167,18 @@ public class CustomWave extends Menu {
 		int b = bSamples[0];
 		int a = aSamples[0];
 		int numSamples = numberOfSamples.getValue();
+		
+		if (smooth.getToggleState()) {
+			context.smooth();
+		} else {
+			context.noSmooth();
+		}
+		
+		if (drawThick.getToggleState()) {
+			context.strokeWeight(1.5f);
+		} else {
+			context.strokeWeight(1);
+		}
 		for (int sample = 1; sample < numSamples; sample++) {
 			float nextX = xSamples[sample];
 			float nextY = ySamples[sample];
@@ -161,18 +189,6 @@ public class CustomWave extends Menu {
 
 			context.fill(context.color(r, g, b, a));
 			context.stroke(context.color(r, g, b, a));
-
-			if (smooth.getToggleState()) {
-				context.smooth();
-			} else {
-				context.noSmooth();
-			}
-
-			if (drawThick.getToggleState()) {
-				context.strokeWeight(1.5f);
-			} else {
-				context.strokeWeight(1);
-			}
 
 			if (useDots.getToggleState()) {
 				context.ellipse(x * context.width, y * context.height, 1, 1);
