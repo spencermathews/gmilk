@@ -3,35 +3,63 @@ package milky.menu;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.jdom.Element;
 
 import processing.core.PApplet;
 
-public class Menu extends MilkyMenuInteractiveComponent {
+public class Menu extends InteractiveMenuComponent {
 
 	protected String prefix = "<";
 	protected String suffix = ">";
-	protected ArrayList<MilkyMenuInteractiveComponent> menuItems = new ArrayList<MilkyMenuInteractiveComponent>();
-	protected MilkyMenuInteractiveComponent selectedItem;
+	protected ArrayList<InteractiveMenuComponent> menuItems = new ArrayList<InteractiveMenuComponent>();
+	protected InteractiveMenuComponent selectedItem;
 
 	public Menu(String label) {
-		this.label = label;
 		register(this);
+		this.prefix = "[";
+		this.setLabel(label);
+		this.suffix = "]";
 	}
 
-	public void addMenuItem(MilkyMenuInteractiveComponent item) {
+	@Override
+	public Element getXML() {
+		Element xml = new Element("menu");
+		xml.setAttribute("label", StringEscapeUtils.escapeXml(getLabel()));
+		for (InteractiveMenuComponent menuItem : menuItems) {
+			xml.addContent(menuItem.getXML());
+		}
+		return xml;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void setXML(Element node) {
+		List<Element> children = node.getChildren();
+		setLabel(node.getAttributeValue("label"));
+		menuItems.clear();
+		for (Element child : children) {
+			InteractiveMenuComponent childComponent = buildComponent(child);
+			addMenuItem(childComponent);
+		}
+	}
+
+	public void addMenuItem(InteractiveMenuComponent item) {
 		if (selectedItem == null) {
 			selectedItem = item;
 		}
 		if (!menuItems.contains(item)) {
-			item.parent = this;
+			item.setParent(this);
 			menuItems.add(item);
 		}
 	}
 
-	public void removeItem(MilkyMenuInteractiveComponent item) {
+	public void removeItem(InteractiveMenuComponent item) {
 		menuItems.remove(item);
-		if (item.parent == this) {
-			item.parent = null;
+		if (item.getParent() == this) {
+			item.setParent(null);
 		}
 	}
 
@@ -43,7 +71,7 @@ public class Menu extends MilkyMenuInteractiveComponent {
 		int w = settings.fontHeight * labels.length;
 		int h = settings.fontWidth * getMaxLabelCharLength(labels);
 		drawBackground(context, x, y, h + 2 * m, w + 2 * m);
-		for (MilkyMenuInteractiveComponent item : menuItems) {
+		for (InteractiveMenuComponent item : menuItems) {
 			if (item == selectedItem) {
 				context.fill(settings.highlightColor);
 			} else {
@@ -94,7 +122,6 @@ public class Menu extends MilkyMenuInteractiveComponent {
 	@Override
 	protected void onUnicodeInput(char unicode) {
 		// XXX: maybe define a short-command map for the menu items
-
 	}
 
 	private int getMaxLabelCharLength(String[] labels) {
@@ -108,8 +135,8 @@ public class Menu extends MilkyMenuInteractiveComponent {
 
 	private String[] getItemLabels() {
 		LinkedList<String> labels = new LinkedList<String>();
-		for (MilkyMenuInteractiveComponent item : menuItems) {
-			labels.add(item.prefix + item.label + item.suffix);
+		for (InteractiveMenuComponent item : menuItems) {
+			labels.add(item.prefix + item.getLabel() + item.suffix);
 		}
 		return labels.toArray(new String[] {});
 	}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<preset>
+  <initCode>
+    <javascript label="initialization script">// javascript</javascript>
+  </initCode>
+  <perFrameCode>
+    <javascript label="per-frame script">// javascript</javascript>
+  </perFrameCode>
+  <minimConfig>
+    <menu label="&amp;apos;Minim&amp;apos; Config" />
+  </minimConfig>
+  <customWaves>
+    <customWave>
+      <customWave label="~ Wave 1">
+        <toggle name="bypass" state="false" />
+        <int varName="red   " min="0" max="255" value="255" />
+        <int varName="green " min="0" max="255" value="255" />
+        <int varName="blue  " min="0" max="255" value="255" />
+        <int varName="alpha " min="0" max="255" value="255" />
+        <toggle name="smooth" state="false" />
+        <toggle name="use dots" state="false" />
+        <toggle name="draw thick" state="false" />
+        <javascript label="initialization script">// javascript</javascript>
+        <int varName="number of samples" min="2" max="512" value="128" />
+        <javascript label="per-sample script">y = 0.5 + Math.sin(frame/5 - sample/(samples-1)*24)*0.1;
+x = 0.25 + 0.5 * sample/(samples-1);</javascript>
+      </customWave>
+    </customWave>
+  </customWaves>
+  <customShapes />
+  <canvasOption>
+    <menu label="[] Canvas Options" />
+  </canvasOption>
+  <perVertexCode>
+    <javascript label="per-vertex script">// javascript</javascript>
+  </perVertexCode>
+</preset>
+

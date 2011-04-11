@@ -4,32 +4,34 @@ import java.util.LinkedList;
 
 import milky.menu.events.ITriggerListener;
 
+import org.jdom.Element;
+
 import processing.core.PApplet;
 
-public class Trigger extends MilkyMenuInteractiveComponent implements ITriggerListener {
-	
+public class Trigger extends InteractiveMenuComponent implements ITriggerListener {
+
 	private LinkedList<ITriggerListener> listeners = new LinkedList<ITriggerListener>();
-	
+
 	public Trigger(String label) {
-		this.label = label;
+		this.setLabel(label);
 		register(this);
 	}
-	
-	public void addListener(ITriggerListener listener){
+
+	public void addListener(ITriggerListener listener) {
 		listeners.add(listener);
 	}
-	
-	public void removeListener(ITriggerListener listener){
+
+	public void removeListener(ITriggerListener listener) {
 		listeners.remove(listener);
 	}
-	
+
 	@Override
 	public void onTrigger() {
-		updateListeners(); // Trigger components can be cascaded		
+		updateListeners(); // Trigger components can be cascaded
 	}
 
-	private void updateListeners(){
-		for(ITriggerListener listener : listeners){
+	private void updateListeners() {
+		for (ITriggerListener listener : listeners) {
 			listener.onTrigger();
 		}
 	}
@@ -58,6 +60,16 @@ public class Trigger extends MilkyMenuInteractiveComponent implements ITriggerLi
 
 	@Override
 	protected void paste() {
+	}
+
+	@Override
+	public Element getXML() {
+		Element triggerElem = new Element("trigger");
+		return triggerElem;
+	}
+
+	@Override
+	public void setXML(Element node) {
 	}
 
 }

@@ -3,9 +3,12 @@ package milky.menu;
 import java.util.LinkedList;
 
 import milky.menu.events.IToggleListener;
+
+import org.jdom.Element;
+
 import processing.core.PApplet;
 
-public class Toggle extends MilkyMenuInteractiveComponent {
+public class Toggle extends InteractiveMenuComponent {
 
 	private String toggleName;
 	private boolean toggleState;
@@ -14,36 +17,36 @@ public class Toggle extends MilkyMenuInteractiveComponent {
 	public Toggle(String label, boolean toggle) {
 		register(this);
 		toggleName = label;
-		setToggle(toggle);
+		setToggleState(toggle);
 	}
 
 	public LinkedList<IToggleListener> getListeners() {
 		return listeners;
 	}
-	
-	public void addListener(IToggleListener listener){
+
+	public void addListener(IToggleListener listener) {
 		getListeners().add(listener);
 	}
 
-	public void removeListener(IToggleListener listener){
+	public void removeListener(IToggleListener listener) {
 		getListeners().remove(listener);
 	}
-	
-	public void setToggle(boolean toggle) {
+
+	public void setToggleState(boolean toggle) {
 		toggleState = toggle;
-		label = toggleName + " " + ((toggle) ? "[ON]" : "[OFF]");
+		setLabel(toggleName + " " + ((toggle) ? "[ON]" : "[OFF]"));
 	}
 
 	public boolean getToggleState() {
 		return toggleState;
 	}
 
-	private void updateListeners(){
-		for(IToggleListener listener : listeners){
+	private void updateListeners() {
+		for (IToggleListener listener : listeners) {
 			listener.onToggleEvent(this);
 		}
 	}
-	
+
 	@Override
 	protected void draw(PApplet context, int x, int y) {
 	}
@@ -58,7 +61,7 @@ public class Toggle extends MilkyMenuInteractiveComponent {
 
 	@Override
 	protected void onActivation() {
-		setToggle(!toggleState);
+		setToggleState(!toggleState);
 		updateListeners();
 		setActive(false); // a toggle component must not be active
 	}
@@ -69,5 +72,19 @@ public class Toggle extends MilkyMenuInteractiveComponent {
 
 	@Override
 	protected void paste() {
+	}
+
+	@Override
+	public Element getXML() {
+		Element toggleElem = new Element("toggle");
+		toggleElem.setAttribute("name", toggleName);
+		toggleElem.setAttribute("state", "" + toggleState);
+		return toggleElem;
+	}
+
+	@Override
+	public void setXML(Element node) {
+		toggleName = node.getAttributeValue("name");
+		toggleState = Boolean.getBoolean(node.getAttributeValue("state"));
 	}
 }

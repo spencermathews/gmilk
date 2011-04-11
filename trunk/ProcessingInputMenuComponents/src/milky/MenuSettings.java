@@ -10,7 +10,9 @@ public class MenuSettings {
 
 	public int fontColor;
 	public int highlightColor;
+	public int highlightColor2;
 	public int backgroundColor;
+	public int backgroundColor2;
 	
 	public MenuSettings() {
 	}
