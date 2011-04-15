@@ -110,11 +110,15 @@ public class TextInput extends InteractiveMenuComponent {
 
 	public void setText(String text) {
 		lines.clear();
+		if (text == null) {
+			text = "";
+		}
 		while (text.indexOf(LINEBREAK) > -1) {
 			String line = text.substring(0, text.indexOf(LINEBREAK));
 			lines.add(line);
 			text = text.substring(text.indexOf(LINEBREAK) + 1);
 		}
+
 		lines.add(text);
 		savedText = getTextAsString();
 	}

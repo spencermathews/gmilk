@@ -53,6 +53,10 @@ public class Menu extends InteractiveMenuComponent {
 		if (!menuItems.contains(item)) {
 			item.setParent(this);
 			menuItems.add(item);
+		}else{
+			menuItems.remove(item);
+			item.setParent(this);
+			menuItems.add(item);
 		}
 	}
 

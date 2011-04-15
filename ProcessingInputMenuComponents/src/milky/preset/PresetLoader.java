@@ -54,7 +54,7 @@ public class PresetLoader extends Menu {
 		confirmOverwrite.addListener(new ITriggerListener() {
 			public void onTrigger() {
 				savePreset();
-				confirmOverwriteBox.setActive(true); // ensure activation to correctly close 
+				confirmOverwriteBox.setActive(true); // ensure activation to correctly close
 				confirmOverwriteBox.close();
 			}
 		});
@@ -62,7 +62,7 @@ public class PresetLoader extends Menu {
 		cancelOverwrite.addListener(new ITriggerListener() {
 			public void onTrigger() {
 				System.out.println("close confirmOverwriteBox");
-				confirmOverwriteBox.setActive(true); // ensure activation to correctly close 
+				confirmOverwriteBox.setActive(true); // ensure activation to correctly close
 				confirmOverwriteBox.close();
 				// nonUnicodesPressed.remove(KeyEvent.VK_ENTER);
 				// confirmOverwriteBox.setActive(false);
@@ -92,10 +92,10 @@ public class PresetLoader extends Menu {
 			public void onTrigger() {
 				String fileName = saveFileNameInput.getTextAsString();
 				if (isValidFileName(fileName)) {
-//					confirmOverwriteBox.setParent(saveFileNameInput);
+					// confirmOverwriteBox.setParent(saveFileNameInput);
 					confirmOverwriteAndSavePreset();
-//					saveFileNameInput.close();
-//					confirmOverwriteBox.setParent(null);
+					// saveFileNameInput.close();
+					// confirmOverwriteBox.setParent(null);
 				} else {
 					saveFileNameInput.setText(makeValidFileName(fileName));
 					saveFileNameInput.setActive(true);
@@ -229,11 +229,11 @@ public class PresetLoader extends Menu {
 	}
 
 	private void parseAndLoadPresetFile(File presetFile) {
-		presetEditor.stopExecution();
 		SAXBuilder builder = new SAXBuilder();
 		try {
 			Document presetDoc = builder.build(presetFile);
 			Element presetRoot = presetDoc.getRootElement();
+			presetRoot.setAttribute(PresetConstants.PRESET_NAME, selectedItem.getLabel());
 			presetEditor.loadPreset(presetRoot);
 		} catch (JDOMException e) {
 			onError(e);
