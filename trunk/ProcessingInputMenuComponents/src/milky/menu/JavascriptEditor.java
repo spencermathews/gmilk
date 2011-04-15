@@ -12,6 +12,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.jdom.Element;
 
 import milky.menu.events.ICompilationListener;
@@ -41,6 +42,16 @@ public class JavascriptEditor extends TextInput {
 		javascriptElem.setAttribute("label", textElem.getAttributeValue("label"));
 		javascriptElem.setText(textElem.getText());
 		return javascriptElem;
+	}
+	
+	@Override
+	public void setXML(Element textElem) {
+		setMultiLine(Boolean.parseBoolean(textElem.getAttributeValue("multiLine")));
+		setReadOnly(Boolean.parseBoolean(textElem.getAttributeValue("readOnly")));
+		setLabel(StringEscapeUtils.unescapeXml(textElem.getAttributeValue("label")));
+		savedText = textElem.getText();
+		setText(StringEscapeUtils.unescapeXml(savedText));
+		checkCursorPosition();
 	}
 
 	public LinkedList<ICompilationListener> getListeners() {

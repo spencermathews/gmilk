@@ -185,10 +185,6 @@ public class PresetEditor extends Menu {
 	private void executeVertexScript() {
 	}
 
-	public void stopExecution() {
-		loopToggle.setToggleState(false);
-	}
-
 	public void loadPreset(Element presetRoot) {
 		setLoadedPresetName(presetRoot.getAttributeValue(PresetConstants.PRESET_NAME));
 		setXML(presetRoot);
@@ -209,9 +205,7 @@ public class PresetEditor extends Menu {
 
 		Element wavesElem = new Element(PresetConstants.CUSTOM_WAVES);
 		for (CustomWave wave : customWaves) {
-			Element waveElem = new Element(PresetConstants.CUSTOM_WAVE);
-			waveElem.addContent(wave.getXML());
-			wavesElem.addContent(waveElem);
+			wavesElem.addContent(wave.getXML());
 		}
 
 		Element shapesElem = new Element(PresetConstants.CUSTOM_SHAPES);
@@ -236,10 +230,9 @@ public class PresetEditor extends Menu {
 
 	@Override
 	public void setXML(Element node) {
-		initMenu();
 		loopToggle.setToggleState(false);
-		initScript.setXML(node.getChild(PresetConstants.INIT_SCRIPT));
-		perFrameScript.setXML(node.getChild(PresetConstants.PER_FRAME_SCRIPT));
+		initScript.setXML(node.getChild(PresetConstants.INIT_SCRIPT).getChild("javascript"));
+		perFrameScript.setXML(node.getChild(PresetConstants.PER_FRAME_SCRIPT).getChild("javascript"));
 
 		for (Object wave : node.getChildren(PresetConstants.CUSTOM_WAVE)) {
 			if (wave instanceof Element) {
@@ -252,7 +245,9 @@ public class PresetEditor extends Menu {
 			}
 		}
 
-		canvasOptions.setXML(node.getChild(PresetConstants.CANVAS_OPTIONS));
-		perVertexScript.setXML(node.getChild(PresetConstants.PER_VERTEX_SCRIPT));
+		canvasOptions.setXML(node.getChild(PresetConstants.CANVAS_OPTIONS).getChild("menu"));
+		perVertexScript.setXML(node.getChild(PresetConstants.PER_VERTEX_SCRIPT).getChild("javascript"));
+		initializePreset();
+		loopToggle.setToggleState(true); // ...and go
 	}
 }
