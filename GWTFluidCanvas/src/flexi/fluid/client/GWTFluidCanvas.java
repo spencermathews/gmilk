@@ -28,8 +28,8 @@ import flexi.fluid.shared.NavierStokesSolver;
 public class GWTFluidCanvas implements EntryPoint {
 	private Canvas canvas;
 	private Context2d context;
-	private static final int canvasHeight = 320;
-	private static final int canvasWidth = 320;
+	private static final int canvasHeight = 400;
+	private static final int canvasWidth = 400;
 	int oldMouseX = 1, oldMouseY = 1;
 
 	private Label fpsLabel;
@@ -76,7 +76,7 @@ public class GWTFluidCanvas implements EntryPoint {
 
 		dialogBox.setText("GWT Canvas Fluid Simulation");
 		dialogBox.setWidget(canvas);
-		dialogBox.setPopupPosition(240, 240);
+		dialogBox.setPopupPosition(100, 100);
 		dialogBox.show();
 
 		context = canvas.getContext2d();
@@ -87,9 +87,9 @@ public class GWTFluidCanvas implements EntryPoint {
 				draw();
 			}
 		};
-		drawLoopTimer.scheduleRepeating(15);
+		drawLoopTimer.scheduleRepeating(15); // highly optimistic :)
 
-		numParticles = 128;
+		numParticles = 256;
 		particles = new Particle[numParticles];
 		initParticles();
 	}
@@ -159,9 +159,9 @@ public class GWTFluidCanvas implements EntryPoint {
 		// });
 	}
 
-	CssColor black = CssColor.make(0, 0, 0);
-	CssColor blue = CssColor.make(0, 0, 192);
-	CssColor light = CssColor.make(192, 192, 192);
+	CssColor vectorColor = CssColor.make(192, 192, 192);
+	CssColor particleColor = CssColor.make(0, 0, 128);
+	CssColor gridColor = CssColor.make(223, 223, 223);
 
 	private long currentMillis;
 
@@ -173,10 +173,10 @@ public class GWTFluidCanvas implements EntryPoint {
 		handleMouseMotion();
 
 		fluidSolver.tick(dt, visc, diff);
-		vScale = dt * canvasWidth * 1.2; // add 20%
+		vScale = dt * canvasWidth * 1.25;
 		context.clearRect(0, 0, canvasWidth, canvasHeight); // sets transparency to 0%
 		drawGrid();
-		// drawVectors();
+		drawVectors();
 		drawParticles();
 	}
 
@@ -186,7 +186,7 @@ public class GWTFluidCanvas implements EntryPoint {
 		double cellWidth = canvasWidth / (double) n;
 
 		// context.setStrokeStyle(blue);
-		context.setFillStyle(blue);
+		context.setFillStyle(particleColor);
 		// context.beginPath();
 
 		for (Particle p : particles) {
@@ -258,7 +258,7 @@ public class GWTFluidCanvas implements EntryPoint {
 
 	private void drawVectors() {
 		double cx, cy, dx, dy;
-		context.setStrokeStyle(black);
+		context.setStrokeStyle(vectorColor);
 		context.beginPath();
 		int n = NavierStokesSolver.N;
 		double n_inverse = 1 / (double) n;
@@ -266,8 +266,8 @@ public class GWTFluidCanvas implements EntryPoint {
 			cy = canvasHeight * (y + 0.5) * n_inverse;
 			for (int x = 0; x < n; x++) {
 				cx = canvasWidth * (x + 0.5) * n_inverse;
-				dx = fluidSolver.getDx(x, y) * vScale;
-				dy = fluidSolver.getDy(x, y) * vScale;
+				dx = fluidSolver.getDx(x, y) * vScale*2;
+				dy = fluidSolver.getDy(x, y) * vScale*2;
 				context.moveTo(cx, cy);
 				context.lineTo(cx + dx, cy + dy);
 				// context.lineTo(cx + 10, cy + 10);
@@ -280,7 +280,7 @@ public class GWTFluidCanvas implements EntryPoint {
 	}
 
 	private void drawGrid() {
-		context.setStrokeStyle(light);
+		context.setStrokeStyle(gridColor);
 		context.beginPath();
 		int n = NavierStokesSolver.N;
 		for (int d = 1; d < n; d++) {
@@ -298,8 +298,8 @@ public class GWTFluidCanvas implements EntryPoint {
 		mouseY = Math.max(1, mouseY);
 
 		int n = NavierStokesSolver.N;
-		double cellHeight = canvasHeight / n;
-		double cellWidth = canvasWidth / n;
+		double cellHeight = (double) canvasHeight / (double) n;
+		double cellWidth = (double) canvasWidth / (double) n;
 
 		double mouseDx = mouseX - oldMouseX;
 		double mouseDy = mouseY - oldMouseY;
