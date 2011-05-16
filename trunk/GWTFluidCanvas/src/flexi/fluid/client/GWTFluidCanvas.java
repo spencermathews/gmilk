@@ -6,14 +6,17 @@ import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.canvas.dom.client.CssColor;
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
 import com.google.gwt.event.dom.client.MouseMoveHandler;
-import com.google.gwt.event.dom.client.MouseOutEvent;
-import com.google.gwt.event.dom.client.MouseOutHandler;
 import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.TextBox;
 
 import flexi.fluid.shared.NavierStokesSolver;
 
@@ -28,21 +31,41 @@ import flexi.fluid.shared.NavierStokesSolver;
 public class GWTFluidCanvas implements EntryPoint {
 	private Canvas canvas;
 	private Context2d context;
+	private static final int maxParticlesNum = 10000;
 	private static final int canvasHeight = 400;
 	private static final int canvasWidth = 400;
 	int oldMouseX = 1, oldMouseY = 1;
 
 	private Label fpsLabel;
 
+	private TextBox particleNum;
+	private Button setParticleNum;
+
 	private NavierStokesSolver fluidSolver;
 	private double visc, diff, limitVelocity, vScale;
 
 	private long oldMillis = System.currentTimeMillis();
 
+	int numParticles = 250;
+	Particle[] particles;
+	Random rnd = new Random();
+
+	int mouseX;
+	int mouseY;
+
+	CssColor vectorColor = CssColor.make(192, 192, 192);
+	CssColor particleColor = CssColor.make(0, 0, 128);
+	CssColor gridColor = CssColor.make(223, 223, 223);
+
+	boolean showGrid = true;
+	boolean showVectors = true;
+
+	private long currentMillis;
+
 	public void onModuleLoad() {
 
 		final DialogBox dialogBox = new DialogBox();
-		dialogBox.setPixelSize(350, 350);
+		dialogBox.setModal(false);
 
 		canvas = Canvas.createIfSupported();
 
@@ -55,6 +78,43 @@ public class GWTFluidCanvas implements EntryPoint {
 		RootPanel.get().add(new Label("FPS: "));
 		fpsLabel = new Label();
 		RootPanel.get().add(fpsLabel);
+
+		RootPanel.get().add(new Label("number of particles (0-10000):"));
+		particleNum = new TextBox();
+		particleNum.setText("" + numParticles);
+		RootPanel.get().add(particleNum);
+
+		setParticleNum = new Button("OK");
+		setParticleNum.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				try {
+					numParticles = Integer.parseInt(particleNum.getText());
+				} catch (Exception e) {
+				} finally {
+					numParticles = Math.max(0, Math.min(maxParticlesNum, numParticles)); // clamp to [0 - max]
+					particleNum.setText("" + numParticles);
+				}
+			}
+		});
+		RootPanel.get().add(setParticleNum);
+
+		final CheckBox showGridBtn = new CheckBox("show grid");
+		showGridBtn.setValue(true);
+		showGridBtn.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				showGrid = showGridBtn.getValue();
+			}
+		});
+		RootPanel.get().add(showGridBtn);
+		
+		final CheckBox showVectorsBtn = new CheckBox("show vectors");
+		showVectorsBtn.setValue(true);
+		showVectorsBtn.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				showVectors = showVectorsBtn.getValue();
+			}
+		});
+		RootPanel.get().add(showVectorsBtn);
 
 		visc = 0.001;
 		diff = 0.3;
@@ -76,7 +136,7 @@ public class GWTFluidCanvas implements EntryPoint {
 
 		dialogBox.setText("GWT Canvas Fluid Simulation");
 		dialogBox.setWidget(canvas);
-		dialogBox.setPopupPosition(100, 100);
+		dialogBox.setPopupPosition(75, 175);
 		dialogBox.show();
 
 		context = canvas.getContext2d();
@@ -87,19 +147,14 @@ public class GWTFluidCanvas implements EntryPoint {
 				draw();
 			}
 		};
-		drawLoopTimer.scheduleRepeating(15); // highly optimistic :)
+		drawLoopTimer.scheduleRepeating(7); // optimistic? - the IE9 delivered sweet 70fps and that was limited by my screen :)
 
-		numParticles = 256;
-		particles = new Particle[numParticles];
+		particles = new Particle[maxParticlesNum];
 		initParticles();
 	}
 
-	int numParticles;
-	Particle[] particles;
-	Random rnd = new Random();
-
 	private void initParticles() {
-		for (int i = 0; i < numParticles - 1; i++) {
+		for (int i = 0; i < maxParticlesNum - 1; i++) {
 			particles[i] = new Particle();
 			particles[i].x = rnd.nextFloat() * canvasWidth;
 			particles[i].y = rnd.nextFloat() * canvasHeight;
@@ -111,9 +166,6 @@ public class GWTFluidCanvas implements EntryPoint {
 		public double y;
 	}
 
-	// mouse positions relative to canvas
-	int mouseX, mouseY;
-
 	// XXX: somehow the event handling slows down the animation noticeably
 	void initHandlers() {
 		canvas.addMouseMoveHandler(new MouseMoveHandler() {
@@ -124,13 +176,13 @@ public class GWTFluidCanvas implements EntryPoint {
 			}
 		});
 
-		canvas.addMouseOutHandler(new MouseOutHandler() {
-			public void onMouseOut(MouseOutEvent event) {
-				event.stopPropagation();
-				mouseX = -200;
-				mouseY = -200;
-			}
-		});
+		// canvas.addMouseOutHandler(new MouseOutHandler() {
+		// public void onMouseOut(MouseOutEvent event) {
+		// event.stopPropagation();
+		// mouseX = -200;
+		// mouseY = -200;
+		// }
+		// });
 
 		// canvas.addTouchMoveHandler(new TouchMoveHandler() {
 		// public void onTouchMove(TouchMoveEvent event) {
@@ -159,12 +211,6 @@ public class GWTFluidCanvas implements EntryPoint {
 		// });
 	}
 
-	CssColor vectorColor = CssColor.make(192, 192, 192);
-	CssColor particleColor = CssColor.make(0, 0, 128);
-	CssColor gridColor = CssColor.make(223, 223, 223);
-
-	private long currentMillis;
-
 	private void draw() {
 		currentMillis = System.currentTimeMillis();
 		double dt = (currentMillis - oldMillis) * 0.001;
@@ -175,8 +221,15 @@ public class GWTFluidCanvas implements EntryPoint {
 		fluidSolver.tick(dt, visc, diff);
 		vScale = dt * canvasWidth * 1.25;
 		context.clearRect(0, 0, canvasWidth, canvasHeight); // sets transparency to 0%
-		drawGrid();
-		drawVectors();
+
+		if (showGrid) {
+			drawGrid();
+		}
+
+		if (showVectors) {
+			drawVectors();
+		}
+
 		drawParticles();
 	}
 
@@ -189,7 +242,8 @@ public class GWTFluidCanvas implements EntryPoint {
 		context.setFillStyle(particleColor);
 		// context.beginPath();
 
-		for (Particle p : particles) {
+		for (int i = 0; i < numParticles; i++) {
+			Particle p = particles[i];
 			if (p != null) {
 				int cellX = (int) Math.floor(p.x / (double) cellWidth);
 				int cellY = (int) Math.floor(p.y / (double) cellHeight);
@@ -266,8 +320,8 @@ public class GWTFluidCanvas implements EntryPoint {
 			cy = canvasHeight * (y + 0.5) * n_inverse;
 			for (int x = 0; x < n; x++) {
 				cx = canvasWidth * (x + 0.5) * n_inverse;
-				dx = fluidSolver.getDx(x, y) * vScale*2;
-				dy = fluidSolver.getDy(x, y) * vScale*2;
+				dx = fluidSolver.getDx(x, y) * vScale * 2;
+				dy = fluidSolver.getDy(x, y) * vScale * 2;
 				context.moveTo(cx, cy);
 				context.lineTo(cx + dx, cy + dy);
 				// context.lineTo(cx + 10, cy + 10);
